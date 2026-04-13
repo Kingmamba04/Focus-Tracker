@@ -32,7 +32,7 @@ No installation or build step required.
 
 ```bash
 git clone https://github.com/Kingmamba/Focus-Tracker.git
-cd task-manager
+cd Focus-Tracker
 open index.html
 ```
 
