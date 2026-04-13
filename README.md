@@ -47,7 +47,7 @@ Focus-Tracker/
 ```
 
 ## Screenshots
-![Focus Tracker Screenshot](screenshot.png)
+![Focus Tracker Screenshot](screenshot.png.png)
 
 
 ## What I Learned
