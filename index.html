@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+  .app { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+  h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 1.5rem; color: #111; }
+
+  .add-form { background: #fff; border-radius: 12px; padding: 1.25rem; border: 1px solid #e0e0e0; margin-bottom: 1.5rem; }
+  .add-form input[type="text"] { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; margin-bottom: 0.75rem; outline: none; background: #fafafa; color: #111; }
+  .add-form input[type="text"]:focus { border-color: #6366f1; background: #fff; }
+  .form-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  select { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; background: #fafafa; color: #111; outline: none; cursor: pointer; }
+  select:focus { border-color: #6366f1; }
+  input[type="date"] { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; background: #fafafa; color: #111; outline: none; cursor: pointer; }
+  input[type="date"]:focus { border-color: #6366f1; }
+  .btn-add { margin-left: auto; padding: 0.5rem 1.25rem; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-add:hover { background: #4f46e5; }
+
+  .filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .filter-btn { padding: 0.35rem 1rem; border: 1px solid #ddd; border-radius: 20px; font-size: 0.85rem; background: #fff; cursor: pointer; color: #555; transition: all 0.15s; }
+  .filter-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+  .sort-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: #666; }
+  .sort-row select { font-size: 0.85rem; padding: 0.3rem 0.6rem; }
+
+  .task-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .task-card { background: #fff; border-radius: 10px; padding: 0.9rem 1rem; border: 1px solid #e0e0e0; display: flex; align-items: flex-start; gap: 0.75rem; transition: opacity 0.2s; }
+  .task-card.done { opacity: 0.5; }
+  .task-card.overdue { border-left: 3px solid #ef4444; }
+
+  .check-btn { width: 20px; height: 20px; min-width: 20px; border-radius: 50%; border: 2px solid #ccc; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.15s; }
+  .check-btn.checked { background: #6366f1; border-color: #6366f1; }
+  .check-btn.checked::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-size: 0.95rem; font-weight: 500; color: #111; word-break: break-word; }
+  .task-card.done .task-title { text-decoration: line-through; color: #999; }
+  .task-meta { display: flex; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap; align-items: center; }
+
+  .badge { font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: 20px; font-weight: 500; }
+  .badge-high { background: #fee2e2; color: #b91c1c; }
+  .badge-medium { background: #fef3c7; color: #92400e; }
+  .badge-low { background: #d1fae5; color: #065f46; }
+  .due-label { font-size: 0.78rem; color: #888; }
+  .due-label.overdue { color: #ef4444; font-weight: 500; }
+
+  .del-btn { background: none; border: none; cursor: pointer; color: #bbb; font-size: 1.1rem; padding: 0 0.25rem; line-height: 1; transition: color 0.15s; }
+  .del-btn:hover { color: #ef4444; }
+
+  .empty { text-align: center; padding: 2.5rem 1rem; color: #aaa; font-size: 0.95rem; }
+  .stats { display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .stat { background: #fff; border-radius: 10px; border: 1px solid #e0e0e0; padding: 0.65rem 1rem; font-size: 0.85rem; color: #666; flex: 1; min-width: 80px; text-align: center; }
+  .stat strong { display: block; font-size: 1.3rem; font-weight: 600; color: #111; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>📋 My Tasks</h1>
+
+  <div class="stats">
+    <div class="stat"><strong id="stat-total">0</strong>Total</div>
+    <div class="stat"><strong id="stat-active">0</strong>Active</div>
+    <div class="stat"><strong id="stat-done">0</strong>Done</div>
+    <div class="stat"><strong id="stat-overdue">0</strong>Overdue</div>
+  </div>
+
+  <div class="add-form">
+    <input type="text" id="task-input" placeholder="Add a new task…" />
+    <div class="form-row">
+      <select id="priority-select">
+        <option value="medium">⚡ Medium</option>
+        <option value="high">🔴 High</option>
+        <option value="low">🟢 Low</option>
+      </select>
+      <input type="date" id="due-date" />
+      <button class="btn-add" onclick="addTask()">Add Task</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('active', this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">Completed</button>
+    <button class="filter-btn" onclick="setFilter('overdue', this)">Overdue</button>
+  </div>
+
+  <div class="sort-row">
+    Sort by:
+    <select id="sort-select" onchange="render()">
+      <option value="created">Date added</option>
+      <option value="due">Due date</option>
+      <option value="priority">Priority</option>
+    </select>
+  </div>
+
+  <div class="task-list" id="task-list"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'focus_tracker_tasks';
+let tasks = [];
+let filter = 'all';
+
+async function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) tasks = JSON.parse(raw);
+  } catch(e) { tasks = []; }
+  render();
+}
+
+async function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch(e) {}
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function isOverdue(t) { return !t.done && t.due && t.due < today(); }
+
+function addTask() {
+  const val = document.getElementById('task-input').value.trim();
+  if (!val) return;
+  tasks.unshift({
+    id: Date.now(),
+    title: val,
+    priority: document.getElementById('priority-select').value,
+    due: document.getElementById('due-date').value,
+    done: false,
+    created: Date.now()
+  });
+  document.getElementById('task-input').value = '';
+  document.getElementById('due-date').value = '';
+  save(); render();
+}
+
+function toggle(id) {
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+
+function remove(id) {
+  tasks = tasks.filter(x => x.id !== id);
+  save(); render();
+}
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+const pOrder = { high: 0, medium: 1, low: 2 };
+
+function render() {
+  const sort = document.getElementById('sort-select').value;
+  let list = [...tasks];
+
+  if (filter === 'active') list = list.filter(t => !t.done);
+  else if (filter === 'done') list = list.filter(t => t.done);
+  else if (filter === 'overdue') list = list.filter(isOverdue);
+
+  if (sort === 'due') list.sort((a, b) => (a.due || 'z') > (b.due || 'z') ? 1 : -1);
+  else if (sort === 'priority') list.sort((a, b) => pOrder[a.priority] - pOrder[b.priority]);
+  else list.sort((a, b) => b.created - a.created);
+
+  const active = tasks.filter(t => !t.done).length;
+  const done = tasks.filter(t => t.done).length;
+  const overdue = tasks.filter(isOverdue).length;
+  document.getElementById('stat-total').textContent = tasks.length;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-overdue').textContent = overdue;
+
+  const el = document.getElementById('task-list');
+  if (!list.length) { el.innerHTML = '<div class="empty">No tasks here yet.</div>'; return; }
+
+  el.innerHTML = list.map(t => {
+    const over = isOverdue(t);
+    const dueLabel = t.due ? `<span class="due-label ${over ? 'overdue' : ''}">📅 ${t.due}${over ? ' · overdue' : ''}</span>` : '';
+    return `
+      <div class="task-card ${t.done ? 'done' : ''} ${over ? 'overdue' : ''}">
+        <button class="check-btn ${t.done ? 'checked' : ''}" onclick="toggle(${t.id})" title="Toggle done"></button>
+        <div class="task-body">
+          <div class="task-title">${esc(t.title)}</div>
+          <div class="task-meta">
+            <span class="badge badge-${t.priority}">${t.priority}</span>
+            ${dueLabel}
+          </div>
+        </div>
+        <button class="del-btn" onclick="remove(${t.id})" title="Delete">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('task-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+load();
+</script>
+</body>
+</html>
